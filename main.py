@@ -1,75 +1,57 @@
 from telethon import TelegramClient, events
 
-# bot_username = '@appealuserbot'
-# CHANNEL_USERNAME = enginer_developer
-# ADMIN_CHANNEL_ID = -1001518206463
-# Bot va API ma'lumotlari
-api_id = '26230342'  # Telegram API ID
-api_hash = '9ae7a9067e358b1cbae12ac0a20ff95e'  # Telegram API Hash
-bot_token = '7129894107:AAFvR_xicYQ0S7viH4K0usQemKDGmQYLZa0'  # Bot token
-channel_username = '@every_dev'  # Kanalingiz username (masalan, '@kanalim')
+api_id = '26230342'  
+api_hash = '9ae7a9067e358b1cbae12ac0a20ff95e'  
+bot_token = '8069163980:AAFt1uZivsOenc6Gr_N0uhD6itX_1-RGWRE'  
 
-# TelegramClient ob'ekti yaratish
+
 client = TelegramClient('bot', api_id, api_hash).start(bot_token=bot_token)
 
-# Foydalanuvchi ma'lumotlarini saqlash uchun dict
+questions = [
+    "👤Ismigiz (To'liq...):",
+    # "💰Narxi $:",
+    "📞Tel (ishlab turgani...):",
+    "📍Shaxar(Qayerdan Qayerga.):"
+]
 user_data = {}
 
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
-    await event.respond("Assalomu alaykum!")
+    user_id = event.sender_id
+    user_data[user_id] = {"answers": [], "current_question": 0}
+    await client.send_message(user_id,"Asslomu alaykum! Xush kelibsiz qaysi tuman yoki shaxarga bormoqchisiz...😊")
+    await client.send_message(user_id, questions[0])   
 
-    # Keyingi xabar uchun get_name funksiyasini kutadi
-    client.add_event_handler(get_name, events.NewMessage(from_users=event.sender_id))
+@client.on(events.NewMessage)
+async def handle_message(event):
+    user_id = event.sender_id
 
-async def get_name(event):
-    name = event.text.strip()
-    if name:
-        user_data[event.sender_id] = {"name": name}  # Ismni saqlash
-        await event.respond("Hush kelibsiz! Ismingizni kiriting: Qayerga borasiz? Manzilingizni kiriting:")
+    if user_id not in user_data:
+        await client.send_message(user_id, "Iltimos, /start buyrug'ini bosing.")
+        return
 
-        # Keyingi xabar uchun get_destination funksiyasini kutadi
-        client.add_event_handler(get_destination, events.NewMessage(from_users=event.sender_id))
+    data = user_data[user_id]
+    current_question = data["current_question"]
+    
+    if event.text.startswith('/start'):
+        return
+    if current_question < len(questions):
+        data["answers"].append(event.text)
 
-        # get_name funksiyasini o'chiradi
-        client.remove_event_handler(get_name, events.NewMessage(from_users=event.sender_id))
+    if current_question + 1 < len(questions):
+        data["current_question"] += 1
+        await client.send_message(user_id, questions[current_question + 1])
     else:
-        await event.respond("Iltimos, ismingizni kiriting:")
+        answers = data["answers"]
+        message = (
+            f"👤Ismi: {answers[0]}\n"
+            # f"💰Narxi $: {answers[1]}\n"
+            f"📞Tel: {answers[1]}\n"
+            f"📍Shaxar: {answers[2]}"
+        )
+        await client.send_message('@ToshkentVodiy01', message)
+        await event.reply("Ma'lumotlar uchun rahmat! Xaydovchilar siz bilan bog'nishyapti... ✅")
+        del user_data[user_id] 
 
-async def get_destination(event):
-    destination = event.text.strip()
-    if destination:
-        user_data[event.sender_id]["destination"] = destination  # Manzilni saqlash
-        await event.respond("Telefon raqamingizni kiriting (+998...) yoki uni ulashing:")
-
-        # Keyingi xabar uchun get_phone funksiyasini kutadi
-        client.add_event_handler(get_phone, events.NewMessage(from_users=event.sender_id))
-
-        # get_destination funksiyasini o'chiradi
-        client.remove_event_handler(get_destination, events.NewMessage(from_users=event.sender_id))
-    else:
-        await event.respond("Iltimos, manzilingizni kiriting:")
-
-async def get_phone(event):
-    phone = event.text.strip()
-    if phone:
-        user_data[event.sender_id]["phone"] = phone  # Telefon raqamini saqlash
-
-        # Ma'lumotlarni kanalga yuborish
-        message = (f"Yangi foydalanuvchi:\n"
-                   f"Ismi: {user_data[event.sender_id]['name']}\n"
-                   f"Manzili: {user_data[event.sender_id]['destination']}\n"
-                   f"Telefon raqami: {phone}")
-        await client.send_message(channel_username, message)
-
-        # Foydalanuvchiga tasdiq yuborish
-        await event.respond("Raxmat! Ma'lumotlaringiz muvaffaqiyatli saqlandi.")
-
-        # get_phone funksiyasini o'chiradi
-        client.remove_event_handler(get_phone, events.NewMessage(from_users=event.sender_id))
-    else:
-        await event.respond("Iltimos, telefon raqamingizni kiriting (+998...):")
-
-# Botni ishga tushirish
-print("Bot ishga tushdi...")
+print("Bot ishga tushdi!")
 client.run_until_disconnected()
