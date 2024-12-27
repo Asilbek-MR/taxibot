@@ -1,8 +1,5 @@
 from telethon import TelegramClient, events
 
-api_id = '26230342'  
-api_hash = '9ae7a9067e358b1cbae12ac0a20ff95e'  
-bot_token = '8069163980:AAFt1uZivsOenc6Gr_N0uhD6itX_1-RGWRE'  
 
 
 client = TelegramClient('bot', api_id, api_hash).start(bot_token=bot_token)
@@ -49,7 +46,9 @@ async def handle_message(event):
             f"📞Tel: {answers[1]}\n"
             f"📍Shaxar: {answers[2]}"
         )
-        await client.send_message('@ToshkentVodiy01', message)
+        # entity = await client.get_entity('https://t.me/+pFWbjP17QxllYmQy')
+        # print(entity,'-----------')
+        await client.send_message(group_name_or_id, message)
         await event.reply("Ma'lumotlar uchun rahmat! Xaydovchilar siz bilan bog'nishyapti... ✅")
         del user_data[user_id] 
 
